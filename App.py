@@ -10,7 +10,7 @@ import json
 
 # 1. Load data
 from src.preprocessing import load_data, clean_data
-from src.run_pipeline import get_outliers, get_dashboard_variables, get_numeric_col
+from src.run_pipeline import get_outliers, get_dashboard_variables
 from pathlib import Path
 
 def load_and_clean_data():
