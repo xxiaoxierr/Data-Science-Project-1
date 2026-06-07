@@ -6,3 +6,4 @@ altair
 scikit-learn
 pwlf
 statsmodels
+matplotlib

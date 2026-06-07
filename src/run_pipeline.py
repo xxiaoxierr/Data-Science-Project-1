@@ -138,19 +138,23 @@ def preprocess_spider_chart(df):
         index=df.index
     )
 
-    return scaled_data
+    return df_imputed, scaled_data
 
 def save_spider_chart_data(data):
     overperformer, underperformer = get_outliers()
     var = get_spider_chart_variables()
     
-    all_df = preprocess_spider_chart(data.loc[:, var])
-    over_df = preprocess_spider_chart(data.loc[overperformer, var])
-    under_df = preprocess_spider_chart(data.loc[underperformer, var])
+    all_df, all_df_scaled = preprocess_spider_chart(data.loc[:, var])
+    over_df, over_df_scaled = preprocess_spider_chart(data.loc[overperformer, var])
+    under_df, under_df_scaled = preprocess_spider_chart(data.loc[underperformer, var])
 
-    over_df.to_parquet('data/overperformer_sc.parquet', index=True)
-    under_df.to_parquet('data/underperformer_sc.parquet', index=True)
-    all_df.to_parquet('data/all_sc.parquet', index=True)
+    over_df.to_parquet('data/overperformer_imputed.parquet', index=True)
+    under_df.to_parquet('data/underperformer_imputed.parquet', index=True)
+    all_df.to_parquet('data/all_imputed.parquet', index=True)
+
+    over_df_scaled.to_parquet('data/overperformer_sc.parquet', index=True)
+    under_df_scaled.to_parquet('data/underperformer_sc.parquet', index=True)
+    all_df_scaled.to_parquet('data/all_sc.parquet', index=True)
 
 
 def save_data(data):

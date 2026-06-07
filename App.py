@@ -123,28 +123,6 @@ def display_ranking(city, df, compare=''):
             )
             st.plotly_chart(fig, use_container_width=True)
 
-        fig = px.bar(
-            df_melted,
-            x='Rank',
-            y='Domain',
-            color='City',
-            barmode='group',                
-            text_auto='.0f',                       
-            color_discrete_sequence=["#29e8db", "#15787A"],
-            orientation='h'
-        )
-
-        fig.update_layout(
-            margin=dict(l=20, r=20, t=30, b=20),
-            xaxis_title=None,
-            yaxis_title=None,
-            bargap=0.4
-        )
-        #st.plotly_chart(fig, use_container_width=True)
-
-
-        
-
 
 # 1. Urban form
 def display_urban_form(city, urban_form, df, compare=''):
@@ -179,11 +157,11 @@ def display_urban_form(city, urban_form, df, compare=''):
 
 def fill_urban_form(metric, value, delta=''):
     if metric == 'Built-up areas per capita':
-        metric_label = f"{metric} / sqm"
+        metric_label = f"{metric}"
         if math.isnan(value):
             value_label = 'No data'
         else:
-            value_label = int(value)
+            value_label = str(int(value)) + " sqm"
 
     elif metric == 'Population':
         metric_label = metric
@@ -337,8 +315,11 @@ def display_city_iden(city, city_iden, df):
             st.text(f"{region}")
     
 # 4. Spider chart
-def generate_spider_chart(city, df, compare=''):
+def generate_spider_chart(city, df, df_imputed, compare=''):
     if compare == '':
+        city_imputed_df = df_imputed.loc[city, :].reset_index()
+        city_imputed_df.columns = ['indicator', 'value']
+
         city_df = df.loc[city, :].reset_index()
         city_df.columns = ['indicator', 'value']
 
@@ -364,7 +345,7 @@ def generate_spider_chart(city, df, compare=''):
                         size=16,          
                         weight="bold"     
                     ),
-                    gridcolor="#E2E8F0"   # Light grey grid rings
+                    gridcolor="#E2E8F0"   
                 ),
 
                 # Customise r
@@ -379,6 +360,7 @@ def generate_spider_chart(city, df, compare=''):
         )
 
     else:
+        city_imputed_df = df_imputed.loc[[city,compare], :]
         city_df = df.loc[[city,compare], :]      
 
         long_df = (
@@ -401,7 +383,6 @@ def generate_spider_chart(city, df, compare=''):
 
         fig.update_traces(
             fill='toself', 
-            #fillcolor="rgba(71, 57, 208, 0.75)", 
             opacity=0.6,
             line_width=2,
             marker=dict(size=8, color="#204E84")
@@ -430,7 +411,72 @@ def generate_spider_chart(city, df, compare=''):
     )
 
     st.plotly_chart(fig, use_container_width=True)
+    display_spider_chart_metric(city, df_imputed, compare)
 
+def display_spider_chart_metric(city, df_imputed, compare=''):
+    cols = st.columns(5)
+    metrics = df_imputed.columns.tolist()
+
+    if compare == '':
+        for i, metric in enumerate(metrics):
+            value = df_imputed.loc[city, metric]
+
+            with cols[i]:
+                if metric == 'Rapid Transit to Resident Ratio (RTR)':
+                    metric_label = 'RTR'
+                    value_label = str(np.round(value, 1)) + " km"
+
+                elif metric == 'Modal split - Public Transport (2017)':
+                    metric_label = 'Modal split - Public Transport'
+                    value *= 100 
+                    value_label = str(np.round(value, 1)) + ' %'
+
+                elif metric == 'Modal split - Car (2017)':
+                    metric_label = 'Modal split - Car'
+                    value *= 100 
+                    value_label = str(np.round(value, 1)) + ' %'
+
+                elif metric == 'Pedestrian Streets per capita':
+                    metric_label = metric
+                    value_label = str(np.round(value, 1)) + ' m'
+
+                elif metric == 'Road Length per capita (2017)':
+                    metric_label = metric
+                    value_label = str(np.round(value, 1)) + ' m'
+                
+                st.metric(label=metric_label, value=value_label)
+    else:
+        for i, metric in enumerate(metrics):
+            value1 = df_imputed.loc[city, metric]
+            value2 = df_imputed.loc[compare, metric]
+
+            with cols[i]:
+                if metric == 'Rapid Transit to Resident Ratio (RTR)':
+                    metric_label = 'RTR'
+                    value_label = str(np.round(value1, 1)) + " km"
+
+                elif metric == 'Modal split - Public Transport (2017)':
+                    metric_label = 'Modal split - Public Transport'
+                    value1 *= 100 
+                    value2 *= 100
+                    value_label = str(np.round(value1, 1)) + ' %'
+
+                elif metric == 'Modal split - Car (2017)':
+                    metric_label = 'Modal split - Car'
+                    value1 *= 100 
+                    value2 *= 100
+                    value_label = str(np.round(value1, 1)) + ' %'
+
+                elif metric == 'Pedestrian Streets per capita':
+                    metric_label = metric
+                    value_label = str(np.round(value1, 1)) + ' m'
+
+                elif metric == 'Road Length per capita (2017)':
+                    metric_label = metric
+                    value_label = str(np.round(value1, 1)) + ' m'
+                
+                st.metric(label=metric_label, value=value_label, delta=np.round(value1-value2, 1))
+        
 
 def display_data_completeness(city, df):
     score = 1- df.loc[city, :].isna().sum() / len(df.columns)
@@ -438,8 +484,29 @@ def display_data_completeness(city, df):
     chart = make_donut(np.round(score, 2), 'Data completeness score', 'orange')
     st.altair_chart(chart, use_container_width=True)
 
+def display_indicator_units(indicators):
+    st.subheader('Data glossary')
 
-def generate_dashboard(city, df, df_sc, compare=''):
+    with open("data/indicator_units.json", "r") as f:
+        data = json.load(f)
+
+    df = pd.DataFrame(columns=['Indicator', 'Units'])
+    indicator_map = {'Modal split - Car (2017)': 'Modal split (Passenger) - by trips - Car (2017)', 
+                     'Modal split - Public Transport (2017)': 'Modal split (Passenger) - by trips - Public Transport (2017)'}
+
+    for indicator in indicators:
+        if indicator in ['Modal split - Car (2017)', 'Modal split - Public Transport (2017)']:
+            to_insert = indicator_map[indicator]
+        else:
+            to_insert = indicator
+
+        to_insert = to_insert.split('(2')[0].strip()
+        df.loc[len(df)] = [to_insert, data[to_insert]]
+
+    st.dataframe(df, use_container_width=True, hide_index=True) 
+        
+
+def generate_dashboard(city, df, df_sc, df_imputed, compare=''):
     urban_form, pct_metrics, city_iden, urban_mobility = get_dashboard_variables()
     display_city_iden(city, city_iden, df)
 
@@ -453,7 +520,8 @@ def generate_dashboard(city, df, df_sc, compare=''):
         with col2: 
             display_ranking(city, df)
         
-        generate_spider_chart(city, df_sc)
+        generate_spider_chart(city, df_sc, df_imputed)
+        display_indicator_units(urban_form+pct_metrics+urban_mobility)
     
     else:
         col1, col2 =  st.columns([1, 1])
@@ -461,21 +529,21 @@ def generate_dashboard(city, df, df_sc, compare=''):
         with col1:
             display_urban_form(city, urban_form, df, compare)
             st.space()
-            #display_ranking(city, df, compare)
             display_pct_metrics(city, pct_metrics, df, compare)
 
         with col2:
             display_ranking(city, df, compare)
-            #display_pct_metrics(city, pct_metrics, df, compare)
 
 
-        generate_spider_chart(city, df_sc, compare)
+        generate_spider_chart(city, df_sc, df_imputed, compare)
+        display_indicator_units(urban_form+pct_metrics+urban_mobility)
 
 
 if __name__ == '__main__':
     df = pd.read_parquet('data/all.parquet')
     df = preprocessing(df)
     df_sc = pd.read_parquet('data/all_sc.parquet')
+    df_imputed = pd.read_parquet('data/all_imputed.parquet')
 
     cities = df.index.tolist()
     over_cities, under_cities = get_outliers()
@@ -500,12 +568,12 @@ if __name__ == '__main__':
                 compare_cities = under_cities
 
     with tab1:
-        generate_dashboard(city_choice, df, df_sc)
+        generate_dashboard(city_choice, df, df_sc, df_imputed)
            
     with tab2:
         compare_choice = st.selectbox(f"I want to compare {city_choice} with", [x for x in compare_cities if x!=city_choice])
         if compare_choice:
-            generate_dashboard(city_choice, df, df_sc, compare_choice)
+            generate_dashboard(city_choice, df, df_sc, df_imputed, compare_choice)
         
         
 
