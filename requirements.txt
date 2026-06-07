@@ -4,3 +4,4 @@ plotly
 numpy
 altair
 scikit-learn
+pwlf
