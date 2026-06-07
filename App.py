@@ -423,7 +423,7 @@ def generate_spider_chart(city, df, compare=''):
             # Customise r
             radialaxis=dict(
                 visible=True,
-                range=[-2,2]
+                range=[-3,4]
             )
         ),
         showlegend=True,
