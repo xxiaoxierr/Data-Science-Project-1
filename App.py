@@ -7,8 +7,6 @@ import numpy as np
 import math
 import re
 import json
-from sklearn.impute import KNNImputer
-from sklearn.preprocessing import StandardScaler
 
 # 1. Load data
 from src.preprocessing import load_data, clean_data
