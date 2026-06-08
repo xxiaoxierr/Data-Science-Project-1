@@ -168,7 +168,7 @@ def fill_urban_form(metric, value, delta=''):
         if math.isnan(value):
             value_label = 'No data'
         else:
-            value_label = format_number(value)
+            value_label = format_number_M(value)
 
     else:
         metric_label = metric
@@ -184,16 +184,21 @@ def fill_urban_form(metric, value, delta=''):
         if metric == 'Built-up areas per capita':
             delta_label = int(delta)
         elif metric == 'Population':
-            delta_label = format_number(delta)
+            delta_label = format_number_M(delta)
         else:
             delta_label = f"{int(delta):,}"
 
         st.metric(label=metric_label, value=value_label, delta=delta_label)
 
 
-def format_number(num):
+def format_number_M(num):
     number = np.round(num / np.power(10,6), 1)
     return str(number) + " M"
+
+def format_number_K(num):
+    number = np.round(num / np.power(10,3), 1)
+    return str(number) + " K"
+
 
 def get_units(indicator):
     with open('data/indicator_units.json') as f:
@@ -351,7 +356,7 @@ def generate_spider_chart(city, df, df_imputed, compare=''):
                 # Customise r
                 radialaxis=dict(
                     visible=True,
-                    range=[-3,3]
+                    range=[-3,4]
                 )
             ),
             showlegend=False,
@@ -438,7 +443,10 @@ def display_spider_chart_metric(city, df_imputed, compare=''):
 
                 elif metric == 'Pedestrian Streets per capita':
                     metric_label = metric
-                    value_label = str(np.round(value, 1)) + ' m'
+                    if value >= 1000:
+                        value_label = format_number_K(np.round(value, 1)) + " m"
+                    else:                     
+                        value_label = str(np.round(value, 1)) + ' m'
 
                 elif metric == 'Road Length per capita (2017)':
                     metric_label = metric
@@ -449,6 +457,8 @@ def display_spider_chart_metric(city, df_imputed, compare=''):
         for i, metric in enumerate(metrics):
             value1 = df_imputed.loc[city, metric]
             value2 = df_imputed.loc[compare, metric]
+
+            delta_label = np.round(value1-value2, 1)
 
             with cols[i]:
                 if metric == 'Rapid Transit to Resident Ratio (RTR)':
@@ -469,14 +479,19 @@ def display_spider_chart_metric(city, df_imputed, compare=''):
 
                 elif metric == 'Pedestrian Streets per capita':
                     metric_label = metric
-                    value_label = str(np.round(value1, 1)) + ' m'
+                    if value1 >= 1000:
+                        value_label = format_number_K(value1) + " m"
+                        delta_label = format_number_K(value1) + " m"
+                    else:                     
+                        value_label = str(np.round(value1, 1)) + ' m'
 
                 elif metric == 'Road Length per capita (2017)':
                     metric_label = metric
                     value_label = str(np.round(value1, 1)) + ' m'
                 
-                st.metric(label=metric_label, value=value_label, delta=np.round(value1-value2, 1))
+                st.metric(label=metric_label, value=value_label, delta=delta_label)
         
+
 
 def display_data_completeness(city, df):
     score = 1- df.loc[city, :].isna().sum() / len(df.columns)
