@@ -1,6 +1,6 @@
 ## Cross sectional Study on Urban Metrics
 
-This is a capstone project for module Introduction to Data Science. The project can be broken down into two phases: EDA, modelling + product.
+This is a capstone project for module "Introduction to Data Science". The project can be broken down into two phases: EDA, modelling + product.
 
 ## Data
 
@@ -19,6 +19,8 @@ $$Access = \beta_0 + \beta_1 RTR + \beta_2 QoL + \beta_3 max(0, RTR-c)$$
 A model that explains 55% variance with 2 variables (with QoL proxy of other measurable data unavailable) is best used as a city benchmark. Model residuals in the upper and lower tails (outliers) are categorised as overperformers and underperformers for city planners to look into what other cities have accomplished. Users may do in-group comparisons for such performers.
 
 The web app comes in 2 tabs, single view and comparison view, as well as a universal sidebar to choose a reference city.  
+
+https://group24-datascienceproject.streamlit.app/
 
 Take note that 'outliers' here are defined to reflect on their extraordinary public transport access relative to the training data (RTR and QoL). With new data, a new model may discover a different set of 'outliers'. 
 
